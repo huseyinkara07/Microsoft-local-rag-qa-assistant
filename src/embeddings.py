@@ -16,7 +16,7 @@ Boylece SDK'ya ihtiyac duymayan katmanlar (ingestion vb.) etkilenmez.
 
 from __future__ import annotations
 
-from . import config
+from . import config, foundry
 
 # Lazy singleton durumu - modul seviyesinde tutulur
 _model = None            # Yuklenmis Foundry Local embedding modeli
@@ -26,28 +26,9 @@ _embedding_client = None  # Modelden alinan embedding client
 def _get_model():
     """Embedding modelini (gerekirse indirip) yukler ve onbellekler."""
     global _model
-    if _model is not None:
-        return _model
-
-    # SDK'yi burada ithal ediyoruz ki modul import'u SDK'ya bagli olmasin.
-    from foundry_local_sdk import Configuration, FoundryLocalManager
-
-    cfg = Configuration(app_name=config.APP_NAME)
-    FoundryLocalManager.initialize(cfg)
-    manager = FoundryLocalManager.instance
-
-    print(f"Embedding modeli hazirlaniyor: {config.EMBEDDING_MODEL}")
-    model = manager.catalog.get_model(config.EMBEDDING_MODEL)
-
-    # Ilk calistirmada model indirilir (sonrakilerde onbellekten gelir).
-    model.download(
-        lambda progress: print(f"\r  indiriliyor: {progress:.1f}%", end="", flush=True)
-    )
-    print()  # ilerleme satirini kapat
-    model.load()
-    print("  model yuklendi.")
-
-    _model = model
+    if _model is None:
+        # Model yukleme ortak foundry altyapisi uzerinden yapilir.
+        _model = foundry.load_model(config.EMBEDDING_MODEL)
     return _model
 
 
