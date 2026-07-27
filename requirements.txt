@@ -1,11 +1,9 @@
 # Local RAG Q&A Assistant - Python bagimliliklari
 # Not: sqlite3 Python'un standart kutuphanesinde yer aldigi icin burada listelenmez.
 
-# Microsoft Foundry Local SDK (embedding + chat modellerini cihaz uzerinde calistirir)
+# Microsoft Foundry Local SDK (Windows / WinML)
+# Embedding ve chat modellerini cihaz uzerinde native client ile calistirir.
 foundry-local-sdk-winml
-
-# OpenAI uyumlu istemci - Foundry Local OpenAI-uyumlu bir endpoint sunar
-openai
 
 # Vektor benzerlik hesaplari (cosine similarity)
 numpy
