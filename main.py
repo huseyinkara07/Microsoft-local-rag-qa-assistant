@@ -15,13 +15,17 @@ Mimari (katmanlar):
     7. README
 
 Bu dosya, tamamlanan katmanlari birbirine baglayan giris noktasidir.
-Su an sadece iskelet mevcut; katmanlar tamamlandikca doldurulacaktir.
+Uygulamayi baslatir: etkilesimli soru-cevap CLI dongusu (Layer 6).
+
+Calistirma:
+    python main.py
 """
+
+from src.cli import run
 
 
 def main() -> None:
-    print("Local RAG Q&A Assistant - iskelet hazir (Layer 1).")
-    print("Sonraki adim: dokuman ingestion (Layer 2).")
+    run()
 
 
 if __name__ == "__main__":
