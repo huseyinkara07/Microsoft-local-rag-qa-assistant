@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Sanal ortam
+.venv/
+venv/
+
+# SQLite veritabani (embedding'ler yeniden uretilebilir - repoya girmez)
+*.db
+*.sqlite
+*.sqlite3
+
+# Ortam / gizli degiskenler
+.env
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
