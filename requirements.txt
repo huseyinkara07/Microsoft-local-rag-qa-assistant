@@ -7,3 +7,6 @@ foundry-local-sdk-winml
 
 # Vektor benzerlik hesaplari (cosine similarity)
 numpy
+
+# Web arayuzu (opsiyonel - streamlit_app.py icin; CLI icin gerekmez)
+streamlit
