@@ -20,15 +20,27 @@ _eps_registered = False    # Execution provider'lar bir kez kaydedilir
 
 
 def get_manager():
-    """FoundryLocalManager'i (gerekirse baslatarak) dondurur."""
+    """FoundryLocalManager'i (gerekirse baslatarak) dondurur.
+
+    FoundryLocalManager bir singleton'dir. Streamlit'in yeniden yuklemesi gibi
+    durumlarda bizim modul global'imiz sifirlanabilir ama SDK'nin singleton'i
+    hafizada baslatilmis kalir. Bu yuzden initialize() 'zaten baslatildi' hatasi
+    verirse bunu yutup mevcut instance'i kullaniriz.
+    """
     global _manager
     if _manager is not None:
         return _manager
 
     from foundry_local_sdk import Configuration, FoundryLocalManager
 
-    cfg = Configuration(app_name=config.APP_NAME)
-    FoundryLocalManager.initialize(cfg)
+    try:
+        cfg = Configuration(app_name=config.APP_NAME)
+        FoundryLocalManager.initialize(cfg)
+    except Exception:
+        # Zaten baslatilmis olabilir; instance yoksa gercek bir hata demektir.
+        if FoundryLocalManager.instance is None:
+            raise
+
     _manager = FoundryLocalManager.instance
     return _manager
 

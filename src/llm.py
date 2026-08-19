@@ -17,20 +17,22 @@ gercekten baglanir.
 
 from __future__ import annotations
 
+import re
+
 from . import config, foundry
 from .retrieval import RetrievedChunk, get_top_chunks
 
 # Sistem istemi: modelin davranisini belirleyen en kritik parca.
+# Not: Kucuk modellerin talimatlari cevaba "papagan gibi" kopyalamasini
+# onlemek icin talimatlar numarali liste yerine kisa duz metin olarak verilir
+# ve en sonda "sadece cevabi yaz" denir.
 SYSTEM_PROMPT = (
-    "Sen, yalnizca sana verilen BAGLAM'a dayanarak soru cevaplayan bir "
-    "yardimci asistansin. Kurallar:\n"
-    "1. Cevabini SADECE asagidaki baglamdaki bilgilere dayandir. "
-    "Kendi genel bilgini kullanma.\n"
-    "2. Eger cevap baglamda yoksa, tahmin yurutme; acikca "
-    "'Bu konuda dokumanlarimda bilgi bulunmuyor.' de.\n"
-    "3. Cevabin sonunda, kullandigin bilgilerin kaynak dosya adini "
-    "'Kaynak: <dosya>' seklinde belirt.\n"
-    "4. Kisa, net ve Turkce cevap ver."
+    "Sen KampusAsistan'sin; universite ogrencilerine yonetmelik ve kampus "
+    "konularinda yardimci olan bir asistansin. Yalnizca sana verilen BAGLAM'daki "
+    "bilgilere dayanarak kisa, net ve anlasilir Turkce cevap ver. Baglamda cevap "
+    "yoksa sadece 'Bu konuda elimde bilgi yok.' de; asla tahmin etme veya baglam "
+    "disi bilgi ekleme. Cevabinin sonunda kullandigin kaynagi '(Kaynak: dosya)' "
+    "biciminde belirt. Talimatlari tekrarlama, sadece cevabi yaz."
 )
 
 # Modelden alinan chat client'i onbelleklenir (tekrar yukleme olmasin).
@@ -44,6 +46,22 @@ def _get_chat_client():
         model = foundry.load_model(config.CHAT_MODEL)
         _chat_client = model.get_chat_client()
     return _chat_client
+
+
+def strip_thinking(text: str) -> str:
+    """Modelin 'dusunme' (<think>...</think>) blogunu cevaptan temizler.
+
+    qwen3 gibi modeller cevaptan once muhakemelerini <think> etiketleri arasinda
+    yazabilir. Bu blok kullaniciya gosterilmemeli. /no_think talimatina ragmen
+    gelirse diye kod tarafinda da temizliyoruz (garanti).
+    """
+    # Kapanis etiketi varsa, sonrasindaki asil cevabi al.
+    if "</think>" in text:
+        text = text.split("</think>")[-1]
+    # Artakalan etiketleri/bloklari temizle.
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    text = text.replace("<think>", "").replace("</think>", "")
+    return text.strip()
 
 
 def build_context(chunks: list[RetrievedChunk]) -> str:
@@ -61,10 +79,12 @@ def build_context(chunks: list[RetrievedChunk]) -> str:
 def build_messages(question: str, chunks: list[RetrievedChunk]) -> list[dict]:
     """Chat API'sine gonderilecek system + user mesajlarini kurar."""
     context = build_context(chunks)
+    # "/no_think": qwen3 gibi 'dusunen' modellerde muhakeme (reasoning) modunu
+    # kapatir; boylece dogrudan cevap uretilir (daha hizli ve temiz cikti).
     user_content = (
         f"BAGLAM:\n{context}\n\n"
         f"SORU: {question}\n\n"
-        "Yukaridaki baglama dayanarak soruyu cevapla."
+        "Yukaridaki baglama dayanarak soruyu cevapla. /no_think"
     )
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -96,7 +116,7 @@ def answer_query(
     # 3. Generate: chat modelinden cevap al
     client = _get_chat_client()
     response = client.complete_chat(messages)
-    answer = response.choices[0].message.content
+    answer = strip_thinking(response.choices[0].message.content)
 
     return answer, chunks
 
