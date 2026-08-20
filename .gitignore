@@ -16,6 +16,10 @@ venv/
 # Ortam / gizli degiskenler
 .env
 
+# Kisisel sunum/demo notlari (repoya girmez)
+SUNUM_NOTLARI.md
+*.docx
+
 # IDE / OS
 .vscode/
 .idea/
